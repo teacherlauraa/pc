@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<HTML LANG="IT">
+<HEAD>
+    <META CHARSET="UTF-8">
+    <META NAME="VIEWPORT" CONTENT="WIDTH=DEVICE-WIDTH, INITIAL-SCALE=1.0">
+    <TITLE>SCHEDA FRAZIONI INTERATTIVA</TITLE>
+    <STYLE>
+        BODY { FONT-FAMILY: 'COMIC SANS MS', CURSIVE, SANS-SERIF; LINE-HEIGHT: 1.6; COLOR: #333; MAX-WIDTH: 950PX; MARGIN: 20PX AUTO; PADDING: 20PX; BACKGROUND-COLOR: #FFF9E6; TEXT-TRANSFORM: UPPERCASE; USER-SELECT: NONE; }
+        H1, H2 { COLOR: #2C3E50; TEXT-ALIGN: CENTER; }
+        .SECTION { BACKGROUND: WHITE; PADDING: 25PX; MARGIN-BOTTOM: 30PX; BORDER: 2PX SOLID #3498DB; BORDER-RADIUS: 15PX; BOX-SHADOW: 5PX 5PX 15PX RGBA(0,0,0,0.1); POSITION: RELATIVE; }
+        
+        .FRAZIONE { DISPLAY: INLINE-FLEX; FLEX-DIRECTION: COLUMN; VERTICAL-ALIGN: MIDDLE; ALIGN-ITEMS: CENTER; MARGIN: 0 5PX; FONT-SIZE: 1.1REM; }
+        .NUM { BORDER-BOTTOM: 2PX SOLID BLACK; PADDING: 0 8PX; WIDTH: 100%; TEXT-ALIGN: CENTER; MIN-HEIGHT: 1.2EM; }
+        .DEN { PADDING: 0 8PX; WIDTH: 100%; TEXT-ALIGN: CENTER; }
+
+        /* AREA DRAG AND DROP */
+        .AREA-COLLEGAMENTO { POSITION: RELATIVE; DISPLAY: FLEX; JUSTIFY-CONTENT: SPACE-BETWEEN; MARGIN-TOP: 20PX; MIN-HEIGHT: 600PX; TOUCH-ACTION: NONE; }
+        .COLONNA { DISPLAY: FLEX; FLEX-DIRECTION: COLUMN; GAP: 12PX; Z-INDEX: 2; }
+        .RETTANGOLO-FRAZIONE { BORDER: 2PX SOLID #3498DB; PADDING: 8PX; BORDER-RADIUS: 10PX; BACKGROUND: WHITE; DISPLAY: FLEX; ALIGN-ITEMS: CENTER; JUSTIFY-CONTENT: SPACE-BETWEEN; MIN-WIDTH: 180PX; POSITION: RELATIVE; }
+        
+        .PALLINO { WIDTH: 18PX; HEIGHT: 18PX; BACKGROUND: #3498DB; BORDER-RADIUS: 50%; CURSOR: CROSSHAIR; Z-INDEX: 10; }
+        .PALLINO:HOVER { BACKGROUND: #2C3E50; TRANSFORM: SCALE(1.2); }
+        .DESTRA { MARGIN-LEFT: 10PX; } .SINISTRA { MARGIN-RIGHT: 10PX; }
+
+        .SVG-LINEE { POSITION: ABSOLUTE; TOP: 0; LEFT: 0; WIDTH: 100%; HEIGHT: 100%; Z-INDEX: 1; POINTER-EVENTS: NONE; }
+        .LINEA-TRACCIATA { STROKE: #3498DB; STROKE-WIDTH: 4; STROKE-LINECAP: ROUND; }
+        .LINEA-GIUSTA { STROKE: #2ECC71 !IMPORTANT; }
+        .LINEA-SBAGLIATA { STROKE: #E74C3C !IMPORTANT; }
+
+        /* FINESTRA MODALE DUSTIN */
+        #MODALE-VITTORIA { 
+            DISPLAY: NONE; POSITION: FIXED; TOP: 0; LEFT: 0; WIDTH: 100%; HEIGHT: 100%; 
+            BACKGROUND: RGBA(0,0,0,0.8); Z-INDEX: 1000; JUSTIFY-CONTENT: CENTER; ALIGN-ITEMS: CENTER; 
+        }
+        .MODALE-CONTENT { 
+            BACKGROUND: WHITE; PADDING: 30PX; BORDER-RADIUS: 20PX; TEXT-ALIGN: CENTER; 
+            MAX-WIDTH: 500PX; BORDER: 5PX SOLID #E74C3C; BOX-SHADOW: 0 0 20PX #E74C3C;
+        }
+        .MODALE-CONTENT IMG { MAX-WIDTH: 100%; BORDER-RADIUS: 15PX; MARGIN-BOTTOM: 15PX; }
+        .MODALE-CONTENT H2 { COLOR: #2C3E50; MARGIN-BOTTOM: 10PX; }
+        .BTN-CHIUDI { BACKGROUND: #E74C3C; COLOR: WHITE; BORDER: NONE; PADDING: 10PX 20PX; BORDER-RADIUS: 10PX; CURSOR: POINTER; FONT-WEIGHT: BOLD; MARGIN-TOP: 15PX; }
+
+        /* ALTRI STILI */
+        .FRAZIONE-ESERCIZIO { DISPLAY: INLINE-BLOCK; PADDING: 12PX; MARGIN: 8PX; BORDER: 5PX SOLID #EEE; BORDER-RADIUS: 50%; CURSOR: POINTER; }
+        .INNER-CIRCLE { BORDER: 5PX SOLID TRANSPARENT; BORDER-RADIUS: 50%; PADDING: 8PX; DISPLAY: FLEX; ALIGN-ITEMS: CENTER; JUSTIFY-CONTENT: CENTER; }
+        .BTN-COLOR { PADDING: 12PX 20PX; MARGIN: 5PX; BORDER: NONE; BORDER-RADIUS: 20PX; CURSOR: POINTER; COLOR: WHITE; FONT-WEIGHT: BOLD; TEXT-TRANSFORM: UPPERCASE; }
+        .RED { BACKGROUND-COLOR: #E74C3C; } .BLUE { BACKGROUND-COLOR: #3498DB; } .GREEN { BACKGROUND-COLOR: #2ECC71; } 
+        .BORDER-RED { BORDER-COLOR: #E74C3C !IMPORTANT; } .BORDER-BLUE { BORDER-COLOR: #3498DB !IMPORTANT; } .BORDER-GREEN { BORDER-COLOR: #2ECC71 !IMPORTANT; }
+        .CORRECT-BG { BACKGROUND-COLOR: #EAFAF1 !IMPORTANT; } .WRONG-BG { BACKGROUND-COLOR: #FDEAEA !IMPORTANT; }
+        .CONTROLLI { DISPLAY: FLEX; JUSTIFY-CONTENT: CENTER; GAP: 10PX; MARGIN-TOP: 20PX; }
+        .BTN-CHECK, .BTN-RESET { PADDING: 10PX 20PX; BORDER-RADIUS: 10PX; CURSOR: POINTER; FONT-WEIGHT: BOLD; TEXT-TRANSFORM: UPPERCASE; }
+        .BTN-CHECK { BACKGROUND: #2C3E50; COLOR: WHITE; } .BTN-RESET { BACKGROUND: #95A5A6; COLOR: WHITE; }
+        .ISTRUZIONI-SPECIALI { BACKGROUND: #E1F5FE; PADDING: 15PX; BORDER-RADIUS: 10PX; BORDER-LEFT: 5PX SOLID #0288D1; MARGIN-BOTTOM: 15PX; }
+        .HINT { FONT-SIZE: 0.8REM; COLOR: #E67E22; DISPLAY: NONE; FONT-WEIGHT: BOLD; }
+    </STYLE>
+</HEAD>
+<BODY>
+
+    <H1>MATEMATICA: IL MONDO DELLE FRAZIONI</H1>
+
+    <!-- MODALE SORPRESA -->
+    <DIV ID="MODALE-VITTORIA">
+        <DIV CLASS="MODALE-CONTENT">
+            <IMG SRC="dustindice.png" ALT="Dustin Stranger Things">
+            <H2>COMPLIMENTI UMBERTO!</H2>
+            <P>GRAZIE AL TUO AIUTO ABBIAMO CHIUSO IL VARCO! HAWKINS È SALVA GRAZIE A TE!</P>
+            <BUTTON CLASS="BTN-CHIUDI" ONCLICK="document.getElementById('MODALE-VITTORIA').style.display='none'">CHIUDI</BUTTON>
+        </DIV>
+    </DIV>
+
+    <!-- 1. RIPASSO -->
+    <DIV CLASS="SECTION">
+        <H2>1. RIPASSO: I TERMINI DELLA FRAZIONE</H2>
+        <DIV STYLE="DISPLAY: FLEX; JUSTIFY-CONTENT: CENTER; ALIGN-ITEMS: CENTER; GAP: 30PX; FLEX-WRAP: WRAP;">
+            <DIV CLASS="FRAZIONE" STYLE="FONT-SIZE: 2.5REM;">
+                <DIV CLASS="NUM">3</DIV><DIV CLASS="DEN">4</DIV>
+            </DIV>
+            <DIV STYLE="BACKGROUND: #ECF0F1; PADDING: 15PX; BORDER-RADIUS: 10PX;">
+                <P>⬆ <B>NUMERATORE</B>: QUANTE PARTI CONSIDERO.</P>
+                <P>— <B>LINEA DI FRAZIONE</B>: INDICA LA DIVISIONE.</P>
+                <P>⬇ <B>DENOMINATORE</B>: IN QUANTE PARTI È DIVISO L'INTERO.</P>
+            </DIV>
+        </DIV>
+    </DIV>
+
+    <!-- 2. CLASSIFICAZIONE -->
+    <DIV CLASS="SECTION" ID="SEC-ES2">
+        <H2>2. CLASSIFICA LE FRAZIONI</H2>
+        <DIV STYLE="TEXT-ALIGN: CENTER; MARGIN-BOTTOM: 20PX;">
+            <BUTTON CLASS="BTN-COLOR RED" ONCLICK="setCurCol('RED')">ROSSO (PROPRIE)</BUTTON>
+            <BUTTON CLASS="BTN-COLOR BLUE" ONCLICK="setCurCol('BLUE')">BLU (IMPROPRIE)</BUTTON>
+            <BUTTON CLASS="BTN-COLOR GREEN" ONCLICK="setCurCol('GREEN')">VERDE (APPARENTI)</BUTTON>
+        </DIV>
+        <DIV STYLE="TEXT-ALIGN: CENTER;">
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="RED" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">4</DIV><DIV CLASS="DEN">7</DIV></DIV></DIV><DIV CLASS="HINT">ROSSO</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">10</DIV><DIV CLASS="DEN">3</DIV></DIV></DIV><DIV CLASS="HINT">BLU</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="GREEN" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">6</DIV><DIV CLASS="DEN">6</DIV></DIV></DIV><DIV CLASS="HINT">VERDE</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="RED" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">2</DIV><DIV CLASS="DEN">9</DIV></DIV></DIV><DIV CLASS="HINT">ROSSO</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE,GREEN" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">15</DIV><DIV CLASS="DEN">5</DIV></DIV></DIV><DIV CLASS="HINT">BLU+VERDE</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">8</DIV><DIV CLASS="DEN">3</DIV></DIV></DIV><DIV CLASS="HINT">BLU</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="RED" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">1</DIV><DIV CLASS="DEN">5</DIV></DIV></DIV><DIV CLASS="HINT">ROSSO</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE,GREEN" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">12</DIV><DIV CLASS="DEN">4</DIV></DIV></DIV><DIV CLASS="HINT">BLU+VERDE</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">11</DIV><DIV CLASS="DEN">6</DIV></DIV></DIV><DIV CLASS="HINT">BLU</DIV></DIV>
+            <DIV CLASS="FRAZIONE-ESERCIZIO" DATA-ANS="BLUE,GREEN" ONCLICK="applyColor(this)" DATA-CLICKS="0"><DIV CLASS="INNER-CIRCLE"><DIV CLASS="FRAZIONE"><DIV CLASS="NUM">20</DIV><DIV CLASS="DEN">10</DIV></DIV></DIV><DIV CLASS="HINT">BLU+VERDE</DIV></DIV>
+        </DIV>
+        <DIV CLASS="CONTROLLI">
+            <BUTTON CLASS="BTN-CHECK" ONCLICK="checkES2()">CONTROLLA</BUTTON>
+            <BUTTON CLASS="BTN-RESET" ONCLICK="resetES2()">RIPROVA</BUTTON>
+        </DIV>
+    </DIV>
+
+    <!-- 3. EQUIVALENTI -->
+    <DIV CLASS="SECTION" ID="SEC-ES3">
+        <H2>3. COLLEGA LE FRAZIONI EQUIVALENTI</H2>
+        <DIV CLASS="AREA-COLLEGAMENTO">
+            <SVG CLASS="SVG-LINEE" ID="SVG3"></SVG>
+            <DIV CLASS="COLONNA">
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E1">1. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">1</DIV><DIV CLASS="DEN">2</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E1', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E2">2. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">2</DIV><DIV CLASS="DEN">3</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E2', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E3">3. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">3</DIV><DIV CLASS="DEN">4</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E3', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E4">4. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">2</DIV><DIV CLASS="DEN">5</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E4', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E5">5. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">4</DIV><DIV CLASS="DEN">8</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E5', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E6">6. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">3</DIV><DIV CLASS="DEN">5</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E6', 'SVG3')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="E7">7. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">10</DIV><DIV CLASS="DEN">20</DIV></DIV> <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'E7', 'SVG3')"></DIV></DIV>
+            </DIV>
+            <DIV CLASS="COLONNA">
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E2">A. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">4</DIV><DIV CLASS="DEN">6</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E1">B. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">5</DIV><DIV CLASS="DEN">10</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E3">C. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">6</DIV><DIV CLASS="DEN">8</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E4">D. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">4</DIV><DIV CLASS="DEN">10</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E6">E. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">6</DIV><DIV CLASS="DEN">10</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E5">F. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">1</DIV><DIV CLASS="DEN">2</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="E7">G. <DIV CLASS="FRAZIONE"><DIV CLASS="NUM">1</DIV><DIV CLASS="DEN">2</DIV></DIV> <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+            </DIV>
+        </DIV>
+        <DIV CLASS="CONTROLLI">
+            <BUTTON CLASS="BTN-CHECK" ONCLICK="checkLines('SVG3')">CONTROLLA</BUTTON>
+            <BUTTON CLASS="BTN-RESET" ONCLICK="resetArea('SVG3')">CANCELLA LINEE</BUTTON>
+        </DIV>
+    </DIV>
+
+    <!-- 4. COMPLEMENTARI -->
+    <DIV CLASS="SECTION" ID="SEC-ES4">
+        <H2>4. TROVA IL NUMERATORE COMPLEMENTARE</H2>
+        <DIV CLASS="ISTRUZIONI-SPECIALI">Hawkins ha bisogno di te! Collega tutte le frazioni per vincere!</DIV>
+        <DIV CLASS="AREA-COLLEGAMENTO" STYLE="MIN-HEIGHT: 750PX;">
+            <SVG CLASS="SVG-LINEE" ID="SVG4"></SVG>
+            <DIV CLASS="COLONNA">
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_3A"><DIV class="FRAZIONE"><DIV class="NUM">5</DIV><DIV class="DEN">8</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">8</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_3A', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_3B"><DIV class="FRAZIONE"><DIV class="NUM">1</DIV><DIV CLASS="DEN">4</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">4</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_3B', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_5A"><DIV class="FRAZIONE"><DIV class="NUM">2</DIV><DIV class="DEN">7</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">7</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_5A', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_5B"><DIV class="FRAZIONE"><DIV class="NUM">6</DIV><DIV class="DEN">11</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">11</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_5B', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_2"><DIV class="FRAZIONE"><DIV class="NUM">3</DIV><DIV class="DEN">5</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">5</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_2', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_3C"><DIV class="FRAZIONE"><DIV class="NUM">7</DIV><DIV class="DEN">10</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">10</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_3C', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_5C"><DIV class="FRAZIONE"><DIV class="NUM">4</DIV><DIV class="DEN">9</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">9</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_5C', 'SVG4')"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-ID="ANS_6"><DIV class="FRAZIONE"><DIV class="NUM">9</DIV><DIV class="DEN">15</DIV></DIV>+ <DIV class="FRAZIONE"><DIV class="NUM">?</DIV><DIV class="DEN">15</DIV></DIV> = 1 <DIV CLASS="PALLINO DESTRA" ONMOUSEDOWN="startLine(event, 'ANS_6', 'SVG4')"></DIV></DIV>
+            </DIV>
+            <DIV CLASS="COLONNA">
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_2" STYLE="WIDTH:120PX;">NUMERATORE: 2 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_3A" STYLE="WIDTH:120PX;">NUMERATORE: 3 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_3B" STYLE="WIDTH:120PX;">NUMERATORE: 3 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_3C" STYLE="WIDTH:120PX;">NUMERATORE: 3 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_5A" STYLE="WIDTH:120PX;">NUMERATORE: 5 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_5B" STYLE="WIDTH:120PX;">NUMERATORE: 5 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_5C" STYLE="WIDTH:120PX;">NUMERATORE: 5 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+                <DIV CLASS="RETTANGOLO-FRAZIONE" DATA-TARGET="ANS_6" STYLE="WIDTH:120PX;">NUMERATORE: 6 <DIV CLASS="PALLINO SINISTRA"></DIV></DIV>
+            </DIV>
+        </DIV>
+        <DIV CLASS="CONTROLLI">
+            <BUTTON CLASS="BTN-CHECK" ONCLICK="checkLines('SVG4', true)">CONTROLLA E SALVA HAWKINS</BUTTON>
+            <BUTTON CLASS="BTN-RESET" ONCLICK="resetArea('SVG4')">CANCELLA LINEE</BUTTON>
+        </DIV>
+    </DIV>
+
+    <SCRIPT>
+        let curCol = '';
+        function setCurCol(c) { curCol = c; }
+        function applyColor(el) {
+            if(!curCol && el.dataset.clicks == 0) return;
+            let inner = el.querySelector('.INNER-CIRCLE');
+            let cl = parseInt(el.dataset.clicks);
+            if(cl===0){ el.classList.add('BORDER-'+curCol); el.dataset.clicks=1; }
+            else if(cl===1){ inner.classList.add('BORDER-'+curCol); el.dataset.clicks=2; }
+            else { el.className='FRAZIONE-ESERCIZIO'; inner.className='INNER-CIRCLE'; el.dataset.clicks=0; }
+        }
+
+        function checkES2() {
+            document.querySelectorAll('.FRAZIONE-ESERCIZIO').forEach(b => {
+                let ans = b.dataset.ans.split(',');
+                let inner = b.querySelector('.INNER-CIRCLE');
+                let usr = [];
+                ['RED','BLUE','GREEN'].forEach(c => {
+                    if(b.classList.contains('BORDER-'+c)) usr.push(c);
+                    if(inner.classList.contains('BORDER-'+c)) usr.push(c);
+                });
+                b.classList.remove('CORRECT-BG','WRONG-BG');
+                if(ans.every(c=>usr.includes(c)) && usr.every(c=>ans.includes(c))) b.classList.add('CORRECT-BG');
+                else { b.classList.add('WRONG-BG'); b.querySelector('.HINT').style.display='BLOCK'; }
+            });
+        }
+        function resetES2() {
+            document.querySelectorAll('.FRAZIONE-ESERCIZIO').forEach(b => {
+                b.className='FRAZIONE-ESERCIZIO'; b.querySelector('.INNER-CIRCLE').className='INNER-CIRCLE'; 
+                b.dataset.clicks=0; b.querySelector('.HINT').style.display='NONE';
+            });
+        }
+
+        let drawing = false; let activeLine = null; let activeSVG = null;
+
+        function startLine(e, id, svgId) {
+            drawing = true; activeSVG = document.getElementById(svgId);
+            const rect = activeSVG.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            const x = clientX - rect.left; const y = clientY - rect.top;
+            activeLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            activeLine.setAttribute("x1", x); activeLine.setAttribute("y1", y);
+            activeLine.setAttribute("x2", x); activeLine.setAttribute("y2", y);
+            activeLine.setAttribute("class", "LINEA-TRACCIATA");
+            activeLine.dataset.from = id;
+            activeSVG.appendChild(activeLine);
+            e.preventDefault();
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const rect = activeSVG.getBoundingClientRect();
+            activeLine.setAttribute("x2", e.clientX - rect.left);
+            activeLine.setAttribute("y2", e.clientY - rect.top);
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!drawing) return;
+            drawing = false;
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const target = el ? el.closest('[data-target]') : null;
+            if (target) {
+                const rect = activeSVG.getBoundingClientRect();
+                const p = target.querySelector('.PALLINO').getBoundingClientRect();
+                activeLine.setAttribute("x2", p.left + 9 - rect.left);
+                activeLine.setAttribute("y2", p.top + 9 - rect.top);
+                activeLine.dataset.to = target.dataset.target;
+            } else { activeLine.remove(); }
+        });
+
+        function checkLines(svgId, triggerDustin = false) {
+            let totalLines = document.getElementById(svgId).querySelectorAll('line').length;
+            let correctCount = 0;
+            
+            document.getElementById(svgId).querySelectorAll('line').forEach(l => {
+                if(l.dataset.from === l.dataset.to) {
+                    l.classList.add('LINEA-GIUSTA');
+                    correctCount++;
+                } else {
+                    l.classList.add('LINEA-SBAGLIATA');
+                }
+            });
+
+            // Se l'esercizio è il 4 (8 coppie) e sono tutte giuste, appare Dustin
+            if(triggerDustin && correctCount === 8) {
+                document.getElementById('MODALE-VITTORIA').style.display = 'flex';
+            } else if (triggerDustin && correctCount < 8) {
+                alert("Hawkins è ancora in pericolo! Controlla i collegamenti rossi.");
+            }
+        }
+        
+        function resetArea(svgId) { document.getElementById(svgId).innerHTML = ''; }
+    </SCRIPT>
+</BODY>
+</HTML>
